@@ -1,0 +1,1 @@
+medium priority: use websocket to safe collection offers into redis db so no api call is required 
