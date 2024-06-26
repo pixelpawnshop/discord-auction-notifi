@@ -42,25 +42,32 @@ def getTime():
     minute = int(minute_text)
     second = int(second_text)
     
-    current_bid = driver.find_element(By.XPATH, '//*[@id="root"]/div/div[1]/div/div/div[2]/div/div[1]/div[2]/div[1]/div/div[2]').text
-    list_bid = current_bid.split(" ")
-    current_bid = float(list_bid[1])
-    print(f"checking the current bid: {current_bid}")    
+    # If less than 1 hour left on the timer start making the calls and compare prices
+    if hour <= 0 and minute <= 45:
     
-    # Make API call to check the current top bid on OpenSea
-    url = "https://api.opensea.io/api/v2/offers/collection/nouns"
-    headers = {"accept": "application/json", "x-api-key": network.OPENSEA_API_KEY}
-    response = requests.get(url, headers=headers)
-    print(response)
-    data = response.json()
-    top_bid = int(data["offers"][0]["price"]["value"])
-    eth = wei_to_eth(top_bid)
-    
-    if current_bid < eth * 0.9:
-        print(f"current bid nouns ({current_bid}) < opensea top bid x 0.9 ({eth})")
-        print("Init bid....")
-        driver.quit()
-        return True, current_bid, eth, hour, minute, second
+        current_bid = driver.find_element(By.XPATH, '//*[@id="root"]/div/div[1]/div/div/div[2]/div/div[1]/div[2]/div[1]/div/div[2]').text
+        list_bid = current_bid.split(" ")
+        current_bid = float(list_bid[1])
+
+        # Make API call to check the current top bid on OpenSea
+    try:
+        url = "https://api.opensea.io/api/v2/offers/collection/nouns"
+        headers = {"accept": "application/json", "x-api-key": network.OPENSEA_API_KEY}
+
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()  # Raise HTTPError for bad responses
+
+        data = response.json()
+        top_bid = int(data["offers"][0]["price"]["value"])
+        eth = wei_to_eth(top_bid)
+
+        if current_bid < eth:
+            driver.quit()
+            return True, current_bid, eth, hour, minute, second
+
+    except:
+        # Handle any exception without detailed information
+        pass
 
     # Close the browser
     driver.quit()
